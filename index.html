@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<base target="_top">
+<title>StatDrop</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:        #070b18;
+  --card:      #0c1222;
+  --card2:     #0a1020;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(79,142,247,0.25);
+  --ink:       #e2e8f8;
+  --ink2:      #8896b3;
+  --ink3:      #3d4f6e;
+  --accent:    #ff6b35;
+  --blue:      #4f8ef7;
+  --blue2:     #2563eb;
+  --green:     #22c55e;
+  --radius:    10px;
+}
+
+html,body{height:100%;overflow-x:hidden}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+}
+
+/* ── Canvas bg ── */
+#bgCanvas{
+  position:fixed;inset:0;
+  width:100%;height:100%;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── Top nav ── */
+.topnav{
+  position:fixed;top:0;left:0;right:0;
+  z-index:100;
+  height:52px;
+  background:rgba(7,11,24,0.85);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;
+}
+.nav-left{display:flex;align-items:center;gap:10px}
+.nav-logo-icon{
+  width:30px;height:30px;
+  background:linear-gradient(135deg,#1e3a6e,#2a5bb8);
+  border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;
+  border:1px solid rgba(79,142,247,0.3);
+}
+.nav-logo-text{
+  font-family:'Syne',sans-serif;
+  font-size:15px;font-weight:800;
+  color:var(--ink);letter-spacing:-.2px;
+}
+.nav-logo-text span{color:var(--accent)}
+.nav-divider{width:1px;height:18px;background:var(--border);margin:0 12px}
+.nav-right{display:flex;align-items:center;gap:12px}
+.live-badge{
+  display:flex;align-items:center;gap:5px;
+  font-family:'Space Mono',monospace;
+  font-size:10px;font-weight:700;
+  color:var(--green);
+  background:rgba(34,197,94,0.08);
+  border:1px solid rgba(34,197,94,0.2);
+  padding:3px 9px;border-radius:20px;
+  letter-spacing:.5px;
+}
+.live-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--green);
+  animation:pulse-dot 1.5s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(0.8)}}
+.tool-label{
+  font-family:'Space Mono',monospace;
+  font-size:9px;font-weight:700;
+  color:var(--ink3);
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+
+/* ── Main layout ── */
+.main{
+  position:relative;z-index:1;
+  max-width:680px;margin:0 auto;
+  padding:80px 20px 80px;
+}
+
+/* ── Section labels ── */
+.section-label{
+  display:flex;align-items:center;gap:10px;
+  font-family:'Space Mono',monospace;
+  font-size:10px;font-weight:700;
+  color:var(--ink2);
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  margin:28px 0 10px;
+}
+.section-bar{
+  width:3px;height:14px;
+  background:var(--blue);
+  border-radius:2px;
+  flex-shrink:0;
+  box-shadow:0 0 8px rgba(79,142,247,0.5);
+}
+
+/* ── Cards ── */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  margin-bottom:4px;
+  transition:border-color .2s;
+}
+.card:hover{border-color:rgba(255,255,255,0.12)}
+.card-header{
+  padding:11px 18px;
+  border-bottom:1px solid var(--border);
+  font-family:'Space Mono',monospace;
+  font-size:10px;font-weight:700;
+  color:var(--ink2);
+  letter-spacing:.8px;
+  display:flex;align-items:center;gap:7px;
+  background:var(--card2);
+}
+.max-label{
+  font-size:8px;
+  color:var(--ink3);
+  font-family:'DM Sans',sans-serif;
+  text-transform:none;
+  letter-spacing:0;
+  font-weight:400;
+}
+.card-body{padding:18px}
+
+/* ── Two col layout ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ── Labels & fields ── */
+.field label{
+  display:block;
+  font-family:'Space Mono',monospace;
+  font-size:9px;font-weight:700;
+  color:var(--ink3);
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:7px;
+}
+select{
+  width:100%;
+  padding:9px 32px 9px 12px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:7px;
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;color:var(--ink);
+  outline:none;cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%233d4f6e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  transition:border-color .2s,box-shadow .2s;
+}
+select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,142,247,0.1)}
+select option{background:#0c1222}
+
+.readonly-field{
+  padding:9px 12px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:7px;
+  font-size:13px;
+  color:var(--ink2);
+  font-style:italic;
+  letter-spacing:.2px;
+}
+
+/* ── Sheet grid ── */
+.sheet-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+.sheet-chip{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:6px;
+  padding:14px 8px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:8px;
+  cursor:pointer;user-select:none;
+  transition:all .2s;
+  text-align:center;
+}
+.sheet-chip:hover{border-color:rgba(79,142,247,0.3);background:rgba(79,142,247,0.05)}
+.sheet-chip.selected{
+  border-color:var(--blue2);
+  background:rgba(37,99,235,0.12);
+  box-shadow:0 0 12px rgba(37,99,235,0.15);
+}
+.chip-icon{font-size:20px}
+.chip-label{
+  font-family:'DM Sans',sans-serif;
+  font-size:11px;font-weight:600;
+  color:var(--ink2);
+}
+.chip-avail{
+  font-family:'Space Mono',monospace;
+  font-size:8px;
+  color:var(--ink3);
+  margin-top:2px;
+  letter-spacing:.3px;
+}
+.sheet-chip.selected .chip-label{color:var(--blue)}
+.sheet-chip.selected .chip-avail{color:rgba(79,142,247,0.6)}
+
+/* ── Transmit button ── */
+.btn-transmit{
+  width:100%;
+  margin-top:28px;
+  padding:17px 24px;
+  background:linear-gradient(135deg, #1a3a7e 0%, #2563eb 50%, #1a3a7e 100%);
+  background-size:200% 100%;
+  color:#fff;
+  border:1px solid rgba(79,142,247,0.4);
+  border-radius:var(--radius);
+  font-family:'Syne',sans-serif;
+  font-size:14px;font-weight:800;
+  letter-spacing:2px;text-transform:uppercase;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:all .3s;
+  position:relative;overflow:hidden;
+}
+.btn-transmit::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);
+  transform:translateX(-100%);
+  transition:transform .5s;
+}
+.btn-transmit:hover{
+  background-position:100% 0;
+  box-shadow:0 0 30px rgba(37,99,235,0.35),0 4px 20px rgba(0,0,0,0.4);
+  transform:translateY(-1px);
+}
+.btn-transmit:hover::after{transform:translateX(100%)}
+.btn-transmit:disabled{
+  background:#111827;
+  border-color:var(--border);
+  color:var(--ink3);
+  cursor:not-allowed;
+  transform:none;box-shadow:none;
+}
+.btn-transmit:disabled::after{display:none}
+.transmit-arrow{
+  font-size:16px;
+  transition:transform .2s;
+}
+.btn-transmit:not(:disabled):hover .transmit-arrow{transform:translateX(4px)}
+
+/* ── Status bar ── */
+.status-msg{
+  display:none;
+  margin-top:14px;
+  padding:11px 16px;
+  border-radius:8px;
+  font-size:13px;font-weight:500;
+  align-items:center;gap:8px;
+}
+.status-msg.show{display:flex}
+.status-msg.success{background:rgba(34,197,94,0.08);color:#4ade80;border:1px solid rgba(34,197,94,0.2)}
+.status-msg.error{background:rgba(239,68,68,0.08);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
+
+/* ── Footer ── */
+.footer{
+  text-align:center;margin-top:60px;
+  padding-top:20px;border-top:1px solid var(--border);
+  font-family:'Space Mono',monospace;
+  font-size:9px;letter-spacing:1px;
+  color:var(--ink3);text-transform:uppercase;
+}
+
+/* ════════════════════════════════════
+   SUCCESS MODAL
+════════════════════════════════════ */
+.modal-backdrop{
+  position:fixed;inset:0;
+  background:rgba(4,7,15,0.85);
+  backdrop-filter:blur(6px);
+  z-index:998;
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.modal-backdrop.show{ display:flex; }
+
+.modal{
+  background:#0c1222;
+  border:1px solid rgba(79,142,247,0.25);
+  border-radius:16px;
+  padding:36px 32px 28px;
+  width:420px;max-width:92vw;
+  position:relative;
+  box-shadow:0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(79,142,247,0.1);
+  animation:modal-in .25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modal-in{
+  from{opacity:0;transform:scale(0.92) translateY(12px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+
+.modal-close{
+  position:absolute;top:14px;right:16px;
+  width:28px;height:28px;border-radius:7px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);
+  color:var(--ink3);font-size:12px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.modal-close:hover{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.3);color:#f87171;}
+
+.modal-icon{
+  width:56px;height:56px;border-radius:50%;
+  background:rgba(34,197,94,0.1);
+  border:2px solid rgba(34,197,94,0.35);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;color:var(--green);
+  margin:0 auto 16px;
+  box-shadow:0 0 24px rgba(34,197,94,0.15);
+  animation:icon-pop .4s cubic-bezier(0.34,1.56,0.64,1) .1s both;
+}
+@keyframes icon-pop{
+  from{transform:scale(0);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+
+.modal-title{
+  font-family:'Syne',sans-serif;
+  font-size:18px;font-weight:800;
+  color:var(--ink);text-align:center;
+  letter-spacing:-.3px;margin-bottom:4px;
+}
+.modal-sub{
+  font-size:12px;color:var(--ink3);
+  text-align:center;margin-bottom:24px;
+}
+
+.modal-stats{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:8px;margin-bottom:24px;
+}
+.stat-chip{
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+}
+.stat-chip.wide{ grid-column:1/-1; }
+.stat-label{
+  font-family:'Space Mono',monospace;
+  font-size:8px;font-weight:700;
+  color:var(--ink3);letter-spacing:1px;
+  text-transform:uppercase;margin-bottom:4px;
+}
+.stat-value{
+  font-size:13px;font-weight:600;
+  color:var(--ink);
+}
+.stat-value.highlight{ color:var(--blue); }
+
+.modal-btn{
+  width:100%;padding:12px;
+  background:linear-gradient(135deg,#1a3a7e,#2563eb);
+  border:1px solid rgba(79,142,247,0.4);
+  border-radius:8px;
+  font-family:'Syne',sans-serif;
+  font-size:13px;font-weight:700;
+  color:#fff;cursor:pointer;
+  letter-spacing:.5px;
+  transition:all .2s;
+}
+.modal-btn:hover{box-shadow:0 4px 20px rgba(37,99,235,0.3);transform:translateY(-1px);}
+
+/* ════════════════════════════════════
+   PROCESSING OVERLAY
+════════════════════════════════════ */
+.processing-overlay{
+  position:fixed;inset:0;
+  background:rgba(4,7,15,0.96);
+  backdrop-filter:blur(8px);
+  z-index:999;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+}
+.processing-overlay.show{display:flex}
+
+.proc-title{
+  font-family:'Space Mono',monospace;
+  font-size:11px;font-weight:700;
+  color:var(--ink2);
+  letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:48px;
+}
+
+/* Data flow animation */
+.data-flow{
+  width:480px;max-width:90vw;
+  position:relative;
+  height:90px;
+  margin-bottom:48px;
+}
+
+/* Nodes */
+.node{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:52px;height:52px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+}
+.node-source{
+  left:0;
+  background:rgba(37,99,235,0.15);
+  border:1.5px solid rgba(37,99,235,0.5);
+  box-shadow:0 0 20px rgba(37,99,235,0.2);
+  animation:node-pulse 2s ease-in-out infinite;
+}
+.node-dest{
+  right:0;
+  background:rgba(255,107,53,0.12);
+  border:1.5px solid rgba(255,107,53,0.4);
+  box-shadow:0 0 20px rgba(255,107,53,0.15);
+  animation:node-pulse 2s ease-in-out infinite .5s;
+}
+@keyframes node-pulse{
+  0%,100%{box-shadow:0 0 20px rgba(37,99,235,0.2)}
+  50%{box-shadow:0 0 35px rgba(37,99,235,0.45)}
+}
+
+/* Node labels */
+.node-label{
+  position:absolute;bottom:-22px;
+  width:60px;text-align:center;left:-4px;
+  font-family:'Space Mono',monospace;
+  font-size:8px;color:var(--ink3);
+  letter-spacing:.8px;text-transform:uppercase;
+}
+.node-dest .node-label{left:auto;right:-4px}
+
+/* Pipeline track */
+.pipeline-track{
+  position:absolute;
+  top:50%;transform:translateY(-50%);
+  left:60px;right:60px;
+  height:2px;
+  background:linear-gradient(90deg,rgba(37,99,235,0.15),rgba(255,107,53,0.1));
+  border-radius:2px;
+  overflow:visible;
+}
+.pipeline-glow{
+  position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(79,142,247,0.4),transparent);
+  animation:glow-sweep 2s linear infinite;
+}
+@keyframes glow-sweep{
+  from{transform:translateX(-100%)}
+  to{transform:translateX(100%)}
+}
+
+/* Packets */
+.packet{
+  position:absolute;
+  top:50%;
+  width:8px;height:8px;
+  border-radius:2px;
+  transform:translateY(-50%);
+  animation:packet-move 1.8s linear infinite;
+  opacity:0;
+}
+.packet-1{background:#4f8ef7;animation-delay:0s}
+.packet-2{background:#7ab3f9;animation-delay:.55s}
+.packet-3{background:#a8cbfb;animation-delay:1.1s}
+
+@keyframes packet-move{
+  0%{left:0%;opacity:0;transform:translateY(-50%) scale(0.6)}
+  5%{opacity:1;transform:translateY(-50%) scale(1)}
+  92%{opacity:1;transform:translateY(-50%) scale(1)}
+  100%{left:100%;opacity:0;transform:translateY(-50%) scale(0.6)}
+}
+
+/* Steps list */
+.proc-steps{
+  display:flex;flex-direction:column;gap:10px;
+  width:300px;
+}
+.proc-step{
+  display:flex;align-items:center;gap:12px;
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;color:var(--ink3);
+  transition:color .3s;
+}
+.proc-step.active{color:var(--ink2)}
+.proc-step.done{color:var(--green)}
+.step-icon{
+  width:20px;height:20px;border-radius:50%;
+  border:1.5px solid var(--ink3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;flex-shrink:0;
+  transition:all .3s;
+}
+.proc-step.active .step-icon{
+  border-color:var(--blue);color:var(--blue);
+  animation:spin-icon .8s linear infinite;
+  box-shadow:0 0 8px rgba(79,142,247,0.3);
+}
+.proc-step.done .step-icon{
+  border-color:var(--green);
+  background:rgba(34,197,94,0.1);
+  color:var(--green);
+  animation:none;
+}
+@keyframes spin-icon{to{transform:rotate(360deg)}}
+
+/* ── Responsive ── */
+@media(max-width:500px){
+  .two-col{grid-template-columns:1fr}
+  .sheet-grid{grid-template-columns:repeat(2,1fr)}
+  .data-flow{width:300px}
+  .proc-title{font-size:9px;letter-spacing:2px}
+}
+</style>
+</head>
+<body>
+
+<!-- Particle canvas -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- Top nav -->
+<nav class="topnav">
+  <div class="nav-left">
+    <div class="nav-logo-icon">📊</div>
+    <div class="nav-logo-text">Stat<span>Drop</span></div>
+    <div class="nav-divider"></div>
+    <div class="tool-label">Client Operations</div>
+  </div>
+  <div class="nav-right">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div class="tool-label">Internal Tool</div>
+  </div>
+</nav>
+
+<!-- Processing overlay -->
+<div class="processing-overlay" id="processingOverlay">
+  <div class="proc-title">Transmitting Data</div>
+
+  <div class="data-flow">
+    <div class="node node-source">📦<div class="node-label">Source</div></div>
+    <div class="pipeline-track">
+      <div class="pipeline-glow"></div>
+      <div class="packet packet-1"></div>
+      <div class="packet packet-2"></div>
+      <div class="packet packet-3"></div>
+    </div>
+    <div class="node node-dest">📬<div class="node-label">Inbox</div></div>
+  </div>
+
+  <div class="proc-steps">
+    <div class="proc-step" id="ps1">
+      <div class="step-icon" id="si1">○</div>
+      <span>Connecting to data source</span>
+    </div>
+    <div class="proc-step" id="ps2">
+      <div class="step-icon" id="si2">○</div>
+      <span>Filtering org data</span>
+    </div>
+    <div class="proc-step" id="ps3">
+      <div class="step-icon" id="si3">○</div>
+      <span>Compiling Excel report</span>
+    </div>
+    <div class="proc-step" id="ps4">
+      <div class="step-icon" id="si4">○</div>
+      <span>Transmitting to inbox</span>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- WHO'S SUBMITTING -->
+  <div class="section-label"><div class="section-bar"></div>Who's Submitting</div>
+  <div class="card">
+    <div class="card-header">👤 &nbsp;KAM DETAILS</div>
+    <div class="card-body two-col">
+      <div class="field">
+        <label>KAM Name <span class="req">*</span></label>
+        <select id="kamSelect" onchange="onKAMChange()">
+          <option value="">— Select —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>KAM Email</label>
+        <div class="readonly-field" id="kamEmailDisplay">Auto-filled</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHAT TO SEND -->
+  <div class="section-label"><div class="section-bar"></div>What to Send</div>
+  <div class="card">
+    <div class="card-header">📊 &nbsp;DATA SHEETS <span class="req">*</span></div>
+    <div class="card-body">
+      <div class="sheet-grid" id="sheetGrid">
+        <div style="color:var(--ink3);font-size:12px;grid-column:1/-1;padding:8px 0">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIME PERIOD -->
+  <div class="section-label"><div class="section-bar"></div>Time Period</div>
+  <div class="card">
+    <div class="card-header">📅 &nbsp;DATE RANGE</div>
+    <div class="card-body two-col">
+      <div class="field">
+        <label>From</label>
+        <select id="startMonth" onchange="populateEndMonths()"></select>
+      </div>
+      <div class="field">
+        <label>To <span class="max-label">(max: current month)</span></label>
+        <select id="endMonth" onchange="updateBtn()"></select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transmit -->
+  <button class="btn-transmit" id="transmitBtn" onclick="transmit()" disabled>
+    Transmit Data <span class="transmit-arrow">→</span>
+  </button>
+
+  <div class="status-msg" id="statusMsg"></div>
+
+  <div class="footer">StatDrop · Client Operations · Internal Tool</div>
+</main>
+
+<!-- ── Success Modal ── -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="successModal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+
+    <div class="modal-icon">✓</div>
+    <div class="modal-title">Report Transmitted</div>
+    <div class="modal-sub" id="modalSub">Data sent successfully.</div>
+
+    <div class="modal-stats" id="modalStats"></div>
+
+    <button class="modal-btn" onclick="closeModal()">Done</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════
+   ⚙️  CONFIG — paste your Apps Script
+   Web App URL here after deploying
+════════════════════════════════════ */
+var SCRIPT_URL = 'https://script.google.com/a/macros/classplus.co/s/AKfycbyBZYUNQh3mmvG_wzfNcdzAltCqD7H10rhoZTmA8qFrOwq2mGl8sHxewNJmzlBM4NSQ/exec';
+
+/* ════════════════════════════════════
+   API HELPER — wraps fetch() calls
+   to the Apps Script backend
+════════════════════════════════════ */
+function api(action, params, onSuccess, onError) {
+  var body = Object.assign({ action: action }, params || {});
+  fetch(SCRIPT_URL, {
+    method:   'POST',
+    redirect: 'follow',
+    headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
+    body:     JSON.stringify(body)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if (data && data.error) { if (onError) onError({ message: data.error }); }
+    else { if (onSuccess) onSuccess(data); }
+  })
+  .catch(function(e){ if (onError) onError(e); });
+}
+════════════════════════════════════ */
+(function(){
+  var canvas = document.getElementById('bgCanvas');
+  var ctx    = canvas.getContext('2d');
+  var W, H;
+
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  window.addEventListener('resize', function(){ resize(); initStreams(); });
+  resize();
+
+  var COL_W   = 28;
+  var streams  = [];
+  var CHARS    = '0123456789.%+-↑↓';
+  var DATA_VALS = ['12.4','0.8','94','↑3.2','2.1k','0.45','87%','↓1.1','3.9','61%','4.7k','18.2','0.03','99.1','↑7','50%'];
+
+  function initStreams(){
+    streams = [];
+    var cols = Math.ceil(W / COL_W);
+    for(var i = 0; i < cols; i++){
+      streams.push(makeStream(i * COL_W, true));
+    }
+  }
+
+  function makeStream(x, randomStart){
+    var len = Math.floor(Math.random() * 12) + 5;
+    var speed = Math.random() * 0.4 + 0.15;
+    var startY = randomStart ? Math.random() * H : -len * 16;
+    var opacity = Math.random() * 0.07 + 0.025;
+    var chars = [];
+    for(var k = 0; k < len; k++){
+      chars.push(Math.random() < 0.4
+        ? DATA_VALS[Math.floor(Math.random() * DATA_VALS.length)]
+        : CHARS[Math.floor(Math.random() * CHARS.length)]);
+    }
+    return { x:x, y:startY, speed:speed, len:len, opacity:opacity, chars:chars, h:16 };
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+
+    // Subtle horizontal grid lines
+    ctx.strokeStyle = 'rgba(79,142,247,0.025)';
+    ctx.lineWidth = 1;
+    for(var gy = 0; gy < H; gy += 60){
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    }
+    // Subtle vertical grid lines
+    for(var gx = 0; gx < W; gx += 80){
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+    }
+
+    // Data streams
+    ctx.font = '11px "Space Mono", monospace';
+    streams.forEach(function(s){
+      s.y += s.speed;
+      for(var i = 0; i < s.chars.length; i++){
+        var cy = s.y - (s.chars.length - i) * s.h;
+        if(cy < -s.h || cy > H + s.h) continue;
+        // Head char slightly brighter
+        var alpha = (i === s.chars.length - 1) ? s.opacity * 2.5 : s.opacity * (0.3 + 0.7 * (i / s.chars.length));
+        ctx.fillStyle = (i === s.chars.length - 1)
+          ? 'rgba(147,197,253,' + alpha + ')'
+          : 'rgba(79,142,247,'  + alpha + ')';
+        ctx.fillText(s.chars[i], s.x, cy);
+      }
+      // Reset when off screen
+      if(s.y - s.len * s.h > H){
+        var ns = makeStream(s.x, false);
+        s.y = ns.y; s.speed = ns.speed; s.opacity = ns.opacity; s.chars = ns.chars; s.len = ns.len;
+      }
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  initStreams();
+  draw();
+})();
+
+/* ════════════════════════════════════
+   APP STATE
+════════════════════════════════════ */
+var CONFIG = null;
+var selectedSheets = [];
+var SHEET_ICONS = { Revenue:'💰', GMV:'📈', Transactions:'🔄', Downloads:'⬇️' };
+
+/* ════════════════════════════════════
+   BOOT
+════════════════════════════════════ */
+window.onload = function(){
+  api('getConfig', {}, onConfigLoaded, function(e){ showStatus('error', e.message); });
+};
+
+function onConfigLoaded(cfg){
+  if(cfg.error){ showStatus('error', cfg.error); return; }
+  CONFIG = cfg;
+  CONFIG.sheets = cfg.sheets.slice(); // store for reset
+
+  // Populate KAM dropdown
+  var sel = document.getElementById('kamSelect');
+  cfg.kams.forEach(function(k){
+    sel.innerHTML += '<option value="'+k+'">'+k+'</option>';
+  });
+
+  // Sheet chips
+  buildSheetGrid(cfg.sheets);
+
+  // Month dropdowns
+  var sm = document.getElementById('startMonth');
+  cfg.months.forEach(function(m){ sm.innerHTML += '<option value="'+m+'">'+m+'</option>'; });
+  if(cfg.months.length >= 6) sm.value = cfg.months[cfg.months.length - 6];
+  else sm.value = cfg.months[0] || '';
+
+  // Populate end months based on chosen start
+  populateEndMonths();
+  // Note: session auto-detect not available from GitHub Pages hosting
+}
+
+function buildSheetGrid(sheets){
+  var grid = document.getElementById('sheetGrid');
+  grid.innerHTML = '';
+  selectedSheets = [];
+  sheets.forEach(function(name){
+    selectedSheets.push(name);
+    var avail = CONFIG.sheetAvailability && CONFIG.sheetAvailability[name]
+      ? 'From ' + CONFIG.sheetAvailability[name]
+      : '';
+    var chip = document.createElement('div');
+    chip.className = 'sheet-chip selected';
+    chip.dataset.sheet = name;
+    chip.innerHTML =
+      '<div class="chip-icon">'+(SHEET_ICONS[name]||'📄')+'</div>' +
+      '<div class="chip-label">'+name+'</div>' +
+      (avail ? '<div class="chip-avail">'+avail+'</div>' : '');
+    chip.onclick = function(){ toggleSheet(chip, name); };
+    grid.appendChild(chip);
+  });
+  updateBtn();
+}
+
+function toggleSheet(chip, name){
+  var idx = selectedSheets.indexOf(name);
+  if(idx === -1){ selectedSheets.push(name); chip.classList.add('selected'); }
+  else{ selectedSheets.splice(idx,1); chip.classList.remove('selected'); }
+  updateBtn();
+}
+
+// Parse "Jan23" → 2301 on the client side
+function monthCode(m){
+  if(!m) return 0;
+  var MAP = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  var match = m.toLowerCase().match(/^([a-z]+)(\d{2})$/);
+  if(match && MAP[match[1]]) return parseInt(match[2])*100 + MAP[match[1]];
+  return 0;
+}
+
+// Re-populate TO dropdown: show only months from selected FROM up to currentMonth
+function populateEndMonths(){
+  var startVal  = document.getElementById('startMonth').value;
+  var startCode = monthCode(startVal);
+  var endSel    = document.getElementById('endMonth');
+  var prev      = endSel.value;
+  endSel.innerHTML = '';
+
+  (CONFIG ? CONFIG.months : []).forEach(function(m){
+    if(monthCode(m) >= startCode){
+      endSel.innerHTML += '<option value="'+m+'">'+m+'</option>';
+    }
+  });
+
+  // Restore previous selection if still valid, otherwise default to current month
+  if(prev && monthCode(prev) >= startCode) endSel.value = prev;
+  else endSel.value = CONFIG.currentMonth || (CONFIG.months[CONFIG.months.length-1] || '');
+  updateBtn();
+}
+
+function onKAMChange(){
+  var kam = document.getElementById('kamSelect').value;
+  // Show auto-filled email
+  var emailEl = document.getElementById('kamEmailDisplay');
+  if(kam && CONFIG && CONFIG.kamEmails && CONFIG.kamEmails[kam]){
+    emailEl.textContent = CONFIG.kamEmails[kam];
+    emailEl.style.color = 'var(--ink2)';
+    emailEl.style.fontStyle = 'normal';
+  } else {
+    emailEl.textContent = 'Auto-filled';
+    emailEl.style.color = '';
+    emailEl.style.fontStyle = '';
+  }
+  updateBtn();
+}
+
+function updateBtn(){
+  var ok = !!(document.getElementById('kamSelect').value &&
+              selectedSheets.length &&
+              document.getElementById('startMonth').value);
+  document.getElementById('transmitBtn').disabled = !ok;
+}
+
+/* ════════════════════════════════════
+   PROCESSING ANIMATION
+════════════════════════════════════ */
+var stepTimers = [];
+
+function showProcessing(){
+  document.getElementById('processingOverlay').classList.add('show');
+  // Reset all steps
+  [1,2,3,4].forEach(function(n){
+    document.getElementById('ps'+n).className='proc-step';
+    document.getElementById('si'+n).textContent='○';
+  });
+  // Animate steps sequentially
+  var delays = [300, 900, 1800, 2800];
+  delays.forEach(function(delay, idx){
+    var t = setTimeout(function(){
+      var n = idx+1;
+      // Mark previous as done
+      if(n > 1){
+        document.getElementById('ps'+(n-1)).className='proc-step done';
+        document.getElementById('si'+(n-1)).textContent='✓';
+      }
+      // Set current as active
+      document.getElementById('ps'+n).className='proc-step active';
+      document.getElementById('si'+n).textContent='↻';
+    }, delay);
+    stepTimers.push(t);
+  });
+}
+
+function hideProcessing(success){
+  stepTimers.forEach(function(t){ clearTimeout(t); });
+  stepTimers = [];
+  if(success){
+    // Mark all done
+    [1,2,3,4].forEach(function(n){
+      document.getElementById('ps'+n).className='proc-step done';
+      document.getElementById('si'+n).textContent='✓';
+    });
+    setTimeout(function(){
+      document.getElementById('processingOverlay').classList.remove('show');
+    }, 800);
+  } else {
+    document.getElementById('processingOverlay').classList.remove('show');
+  }
+}
+
+/* ════════════════════════════════════
+   TRANSMIT
+════════════════════════════════════ */
+function transmit(){
+  var kam   = document.getElementById('kamSelect').value;
+  var email = CONFIG && CONFIG.kamEmails && CONFIG.kamEmails[kam] ? CONFIG.kamEmails[kam] : '';
+  var start = document.getElementById('startMonth').value;
+  var end   = document.getElementById('endMonth').value;
+
+  if(!email){ showStatus('error', 'No email found for '+kam+'.'); return; }
+  if(!selectedSheets.length){ showStatus('error', 'Select at least one sheet.'); return; }
+
+  document.getElementById('transmitBtn').disabled = true;
+  document.getElementById('statusMsg').className = 'status-msg';
+  showProcessing();
+
+  api('sendData',
+    { kamName:kam, email:email, sheets:selectedSheets, startMonth:start, endMonth:end },
+    function(res){
+      hideProcessing(res.success);
+      document.getElementById('transmitBtn').disabled = false;
+      if(res.success){
+        showModal({ kam:kam, email:email, start:start, end:end,
+                    sheets:selectedSheets.slice(), orgCount:res.orgCount });
+      } else {
+        showStatus('error', '❌  '+(res.message || 'Send failed'));
+      }
+    },
+    function(e){
+      hideProcessing(false);
+      document.getElementById('transmitBtn').disabled = false;
+      showStatus('error', '❌  '+e.message);
+    }
+  );
+}
+
+/* ════════════════════════════════════
+   SUCCESS MODAL
+════════════════════════════════════ */
+function showModal(data){
+  document.getElementById('modalSub').textContent =
+    'Delivered to ' + data.email;
+
+  var statsHtml =
+    '<div class="stat-chip">' +
+      '<div class="stat-label">KAM</div>' +
+      '<div class="stat-value highlight">' + data.kam + '</div>' +
+    '</div>' +
+    '<div class="stat-chip">' +
+      '<div class="stat-label">Organisations</div>' +
+      '<div class="stat-value highlight">' + (data.orgCount || '—') + ' orgs</div>' +
+    '</div>' +
+    '<div class="stat-chip">' +
+      '<div class="stat-label">Period</div>' +
+      '<div class="stat-value">' + data.start + ' → ' + data.end + '</div>' +
+    '</div>' +
+    '<div class="stat-chip">' +
+      '<div class="stat-label">Sheets</div>' +
+      '<div class="stat-value">' + data.sheets.length + ' included</div>' +
+    '</div>' +
+    '<div class="stat-chip wide">' +
+      '<div class="stat-label">Data Included</div>' +
+      '<div class="stat-value">' + data.sheets.join(' · ') + '</div>' +
+    '</div>';
+
+  document.getElementById('modalStats').innerHTML = statsHtml;
+  document.getElementById('modalBackdrop').classList.add('show');
+}
+
+function closeModal(){
+  document.getElementById('modalBackdrop').classList.remove('show');
+  resetForm();
+}
+
+function resetForm(){
+  // Reset KAM
+  document.getElementById('kamSelect').value = '';
+  document.getElementById('kamEmailDisplay').textContent = 'Auto-filled';
+  document.getElementById('kamEmailDisplay').style.color = '';
+  document.getElementById('kamEmailDisplay').style.fontStyle = '';
+
+  // Reset sheets (re-select all)
+  document.querySelectorAll('.sheet-chip').forEach(function(chip){
+    chip.classList.add('selected');
+  });
+  selectedSheets = CONFIG ? CONFIG.sheets.slice() : [];
+
+  // Reset months
+  var months = CONFIG ? CONFIG.months : [];
+  var sm = document.getElementById('startMonth');
+  if(months.length >= 6) sm.value = months[months.length - 6];
+  else if(months.length) sm.value = months[0];
+  populateEndMonths();
+
+  // Clear status
+  document.getElementById('statusMsg').className = 'status-msg';
+  updateBtn();
+}
+
+function showStatus(type, msg){
+  var el = document.getElementById('statusMsg');
+  el.className = 'status-msg show '+type;
+  el.innerHTML = msg;
+}
+</script>
+</body>
+</html>
