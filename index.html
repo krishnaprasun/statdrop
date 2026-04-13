@@ -685,23 +685,27 @@ select option{background:#0c1222}
 var SCRIPT_URL = 'https://script.google.com/a/macros/classplus.co/s/AKfycbyBZYUNQh3mmvG_wzfNcdzAltCqD7H10rhoZTmA8qFrOwq2mGl8sHxewNJmzlBM4NSQ/exec';
 
 /* ════════════════════════════════════
-   API HELPER — wraps fetch() calls
-   to the Apps Script backend
+   API HELPER — GET requests work
+   cleanly with Apps Script CORS
 ════════════════════════════════════ */
 function api(action, params, onSuccess, onError) {
-  var body = Object.assign({ action: action }, params || {});
-  fetch(SCRIPT_URL, {
-    method:   'POST',
-    redirect: 'follow',
-    headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
-    body:     JSON.stringify(body)
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    if (data && data.error) { if (onError) onError({ message: data.error }); }
-    else { if (onSuccess) onSuccess(data); }
-  })
-  .catch(function(e){ if (onError) onError(e); });
+  var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
+
+  if (params) {
+    if (action === 'getKAMOrgs' && params.kamName) {
+      url += '&kamName=' + encodeURIComponent(params.kamName);
+    } else if (action === 'sendData') {
+      url += '&data=' + encodeURIComponent(JSON.stringify(params));
+    }
+  }
+
+  fetch(url, { redirect: 'follow' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.error) { if (onError) onError({ message: data.error }); }
+      else { if (onSuccess) onSuccess(data); }
+    })
+    .catch(function(e) { if (onError) onError({ message: e.message }); });
 }
 ════════════════════════════════════ */
 (function(){
